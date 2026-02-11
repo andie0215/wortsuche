@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wortsuche - Sopa de Letras en Alemán</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --coal: #1a1a1a;
+            --fire: #d93025;
+            --gold: #f4b400;
+            --cream: #faf8f5;
+            --ash: #5f6368;
+            --sage: #34a853;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Work Sans', sans-serif;
+            background: var(--cream);
+            color: var(--coal);
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 8px;
+            background: linear-gradient(90deg, var(--coal) 33.33%, var(--fire) 33.33%, var(--fire) 66.66%, var(--gold) 66.66%);
+            z-index: 1000;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        header {
+            text-align: center;
+            margin: 40px 0 50px;
+        }
+
+        h1 {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-weight: 800;
+            color: var(--coal);
+            letter-spacing: -0.02em;
+            margin-bottom: 10px;
+            line-height: 1.1;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: var(--ash);
+            font-weight: 500;
+        }
+
+        .game-wrapper {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        @media (max-width: 1024px) {
+            .game-wrapper {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .board-container {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            position: relative;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 6px;
+            margin: 0 auto;
+            max-width: 600px;
+        }
+
+        .cell {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(1rem, 2vw, 1.4rem);
+            font-weight: 700;
+            background: var(--cream);
+            border: 2px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
+            color: var(--coal);
+        }
+
+        .cell:hover {
+            background: #fff;
+            border-color: var(--gold);
+            transform: scale(1.05);
+        }
+
+        .cell.selected {
+            background: var(--gold);
+            color: var(--coal);
+            transform: scale(1.08);
+        }
+
+        .cell.found {
+            background: var(--sage);
+            color: white;
+            border-color: var(--sage);
+            animation: popFound 0.4s ease-out;
+        }
+
+        @keyframes popFound {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .words-panel {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .words-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--coal);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .word-count {
+            background: var(--gold);
+            color: var(--coal);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .word-item {
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            border-radius: 10px;
+            background: var(--cream);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+
+        .word-item:hover {
+            background: #f0ede8;
+            border-left-color: var(--fire);
+        }
+
+        .word-item.found {
+            background: rgba(52, 168, 83, 0.1);
+            border-left-color: var(--sage);
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+
+        .word-german {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--coal);
+            margin-bottom: 2px;
+        }
+
+        .word-spanish {
+            font-size: 0.9rem;
+            color: var(--ash);
+        }
+
+        .info-panel {
+            background: linear-gradient(135deg, var(--coal) 0%, #2d2d2d 100%);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            color: var(--cream);
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .info-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--fire), var(--gold));
+        }
+
+        .info-placeholder {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            opacity: 0.3;
+        }
+
+        .info-text {
+            color: var(--ash);
+            font-size: 0.95rem;
+        }
+
+        .word-info {
+            animation: slideInInfo 0.4s ease-out;
+        }
+
+        @keyframes slideInInfo {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .info-word {
+            font-family: 'Syne', sans-serif;
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+            color: var(--gold);
+        }
+
+        .info-meaning {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            color: var(--cream);
+        }
+
+        .info-examples-title {
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--gold);
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .info-example {
+            margin-bottom: 12px;
+            padding: 12px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            border-left: 3px solid var(--gold);
+            text-align: left;
+        }
+
+        .example-de {
+            font-style: italic;
+            margin-bottom: 4px;
+            color: var(--cream);
+        }
+
+        .example-es {
+            font-size: 0.9rem;
+            color: rgba(250, 248, 245, 0.7);
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Work Sans', sans-serif;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .btn-primary {
+            background: var(--fire);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #c72419;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(217, 48, 37, 0.4);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--coal);
+            border: 2px solid var(--coal);
+        }
+
+        .btn-secondary:hover {
+            background: var(--coal);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .victory-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .victory-modal.show {
+            display: flex;
+        }
+
+        .victory-content {
+            background: white;
+            border-radius: 20px;
+            padding: 50px;
+            text-align: center;
+            max-width: 500px;
+            animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .victory-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 8px;
+            background: linear-gradient(90deg, var(--coal), var(--fire), var(--gold));
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .victory-emoji {
+            font-size: 5rem;
+            margin-bottom: 20px;
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .victory-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--coal);
+            margin-bottom: 15px;
+        }
+
+        .victory-message {
+            font-size: 1.2rem;
+            color: var(--ash);
+            margin-bottom: 30px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: var(--cream);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--sage), var(--gold));
+            transition: width 0.5s ease;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Wortsuche</h1>
+            <p class="subtitle">Encuentra las palabras en alemán y aprende su significado</p>
+        </header>
+
+        <div class="game-wrapper">
+            <div class="board-container">
+                <div class="board" id="board"></div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressBar"></div>
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <div class="words-panel">
+                    <h2 class="words-title">
+                        Palabras
+                        <span class="word-count" id="wordCount">0/0</span>
+                    </h2>
+                    <div id="wordsList"></div>
+                </div>
+
+                <div class="info-panel" id="infoPanel">
+                    <div class="info-placeholder">🔍</div>
+                    <p class="info-text">Encuentra una palabra para ver su significado y ejemplos</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" onclick="newGame()">🎲 Nueva Partida</button>
+            <button class="btn btn-secondary" onclick="clearSelection()">✨ Limpiar Selección</button>
+        </div>
+    </div>
+
+    <div class="victory-modal" id="victoryModal">
+        <div class="victory-content">
+            <div class="victory-emoji">🎉</div>
+            <h2 class="victory-title">¡Ausgezeichnet!</h2>
+            <p class="victory-message">¡Has encontrado todas las palabras!</p>
+            <button class="btn btn-primary" onclick="closeVictory()">Cerrar</button>
+        </div>
+    </div>
+
+    <script>
+        const WORDS_DATABASE = [
+            // Animales
+            {
+                word: "HUND",
+                meaning: "Perro",
+                examples: [
+                    { de: "Der Hund bellt laut.", es: "El perro ladra fuerte." },
+                    { de: "Mein Hund heißt Max.", es: "Mi perro se llama Max." }
+                ]
+            },
+            {
+                word: "KATZE",
+                meaning: "Gato",
+                examples: [
+                    { de: "Meine Katze schläft auf dem Sofa.", es: "Mi gato duerme en el sofá." },
+                    { de: "Die Katze jagt eine Maus.", es: "El gato caza un ratón." }
+                ]
+            },
+            {
+                word: "VOGEL",
+                meaning: "Pájaro",
+                examples: [
+                    { de: "Der Vogel singt schön.", es: "El pájaro canta bonito." },
+                    { de: "Ein bunter Vogel sitzt im Baum.", es: "Un pájaro colorido está en el árbol." }
+                ]
+            },
+            {
+                word: "FISCH",
+                meaning: "Pez",
+                examples: [
+                    { de: "Der Fisch schwimmt im Meer.", es: "El pez nada en el mar." },
+                    { de: "Ich esse gern Fisch.", es: "Me gusta comer pescado." }
+                ]
+            },
+            {
+                word: "PFERD",
+                meaning: "Caballo",
+                examples: [
+                    { de: "Das Pferd galoppiert über die Wiese.", es: "El caballo galopa por el prado." },
+                    { de: "Sie reitet auf einem braunen Pferd.", es: "Ella monta un caballo marrón." }
+                ]
+            },
+            {
+                word: "MAUS",
+                meaning: "Ratón",
+                examples: [
+                    { de: "Die Maus ist sehr klein.", es: "El ratón es muy pequeño." },
+                    { de: "Eine Maus läuft durch das Haus.", es: "Un ratón corre por la casa." }
+                ]
+            },
+            {
+                word: "SCHAF",
+                meaning: "Oveja",
+                examples: [
+                    { de: "Das Schaf hat weiße Wolle.", es: "La oveja tiene lana blanca." },
+                    { de: "Die Schafe grasen auf der Weide.", es: "Las ovejas pastan en el prado." }
+                ]
+            },
+            {
+                word: "SCHWEIN",
+                meaning: "Cerdo",
+                examples: [
+                    { de: "Das Schwein lebt auf dem Bauernhof.", es: "El cerdo vive en la granja." },
+                    { de: "Schweine sind intelligente Tiere.", es: "Los cerdos son animales inteligentes." }
+                ]
+            },
+            // Naturaleza
+            {
+                word: "BAUM",
+                meaning: "Árbol",
+                examples: [
+                    { de: "Der Baum ist sehr alt.", es: "El árbol es muy viejo." },
+                    { de: "Im Frühling blüht der Baum.", es: "En primavera el árbol florece." }
+                ]
+            },
+            {
+                word: "BLUME",
+                meaning: "Flor",
+                examples: [
+                    { de: "Die Blume duftet schön.", es: "La flor huele bien." },
+                    { de: "Ich schenke dir eine rote Blume.", es: "Te regalo una flor roja." }
+                ]
+            },
+            {
+                word: "WALD",
+                meaning: "Bosque",
+                examples: [
+                    { de: "Wir spazieren durch den Wald.", es: "Paseamos por el bosque." },
+                    { de: "Der Wald ist grün und dicht.", es: "El bosque es verde y denso." }
+                ]
+            },
+            {
+                word: "BERG",
+                meaning: "Montaña",
+                examples: [
+                    { de: "Der Berg ist sehr hoch.", es: "La montaña es muy alta." },
+                    { de: "Wir wandern auf den Berg.", es: "Caminamos hacia la montaña." }
+                ]
+            },
+            {
+                word: "MEER",
+                meaning: "Mar",
+                examples: [
+                    { de: "Das Meer ist blau und tief.", es: "El mar es azul y profundo." },
+                    { de: "Ich schwimme gern im Meer.", es: "Me gusta nadar en el mar." }
+                ]
+            },
+            {
+                word: "FLUSS",
+                meaning: "Río",
+                examples: [
+                    { de: "Der Fluss fließt ins Meer.", es: "El río fluye hacia el mar." },
+                    { de: "Wir angeln am Fluss.", es: "Pescamos en el río." }
+                ]
+            },
+            {
+                word: "SONNE",
+                meaning: "Sol",
+                examples: [
+                    { de: "Die Sonne scheint heute.", es: "El sol brilla hoy." },
+                    { de: "Die Sonne geht unter.", es: "El sol se pone." }
+                ]
+            },
+            {
+                word: "MOND",
+                meaning: "Luna",
+                examples: [
+                    { de: "Der Mond leuchtet nachts.", es: "La luna brilla de noche." },
+                    { de: "Heute ist Vollmond.", es: "Hoy es luna llena." }
+                ]
+            },
+            {
+                word: "STERN",
+                meaning: "Estrella",
+                examples: [
+                    { de: "Die Sterne funkeln am Himmel.", es: "Las estrellas brillan en el cielo." },
+                    { de: "Ich sehe einen hellen Stern.", es: "Veo una estrella brillante." }
+                ]
+            },
+            {
+                word: "REGEN",
+                meaning: "Lluvia",
+                examples: [
+                    { de: "Der Regen fällt stark.", es: "La lluvia cae fuerte." },
+                    { de: "Ich mag den Regen.", es: "Me gusta la lluvia." }
+                ]
+            },
+            {
+                word: "SCHNEE",
+                meaning: "Nieve",
+                examples: [
+                    { de: "Der Schnee ist weiß und kalt.", es: "La nieve es blanca y fría." },
+                    { de: "Im Winter fällt viel Schnee.", es: "En invierno cae mucha nieve." }
+                ]
+            },
+            // Casa y objetos
+            {
+                word: "HAUS",
+                meaning: "Casa",
+                examples: [
+                    { de: "Ich wohne in einem großen Haus.", es: "Vivo en una casa grande." },
+                    { de: "Das Haus hat einen schönen Garten.", es: "La casa tiene un jardín bonito." }
+                ]
+            },
+            {
+                word: "TISCH",
+                meaning: "Mesa",
+                examples: [
+                    { de: "Der Tisch ist aus Holz.", es: "La mesa es de madera." },
+                    { de: "Auf dem Tisch steht eine Vase.", es: "Sobre la mesa hay un jarrón." }
+                ]
+            },
+            {
+                word: "STUHL",
+                meaning: "Silla",
+                examples: [
+                    { de: "Der Stuhl ist bequem.", es: "La silla es cómoda." },
+                    { de: "Ich sitze auf einem Stuhl.", es: "Estoy sentado en una silla." }
+                ]
+            },
+            {
+                word: "BETT",
+                meaning: "Cama",
+                examples: [
+                    { de: "Das Bett ist weich.", es: "La cama es suave." },
+                    { de: "Ich schlafe im Bett.", es: "Duermo en la cama." }
+                ]
+            },
+            {
+                word: "FENSTER",
+                meaning: "Ventana",
+                examples: [
+                    { de: "Das Fenster ist offen.", es: "La ventana está abierta." },
+                    { de: "Ich schaue aus dem Fenster.", es: "Miro por la ventana." }
+                ]
+            },
+            {
+                word: "TUER",
+                meaning: "Puerta",
+                examples: [
+                    { de: "Die Tür ist geschlossen.", es: "La puerta está cerrada." },
+                    { de: "Bitte öffne die Tür.", es: "Por favor abre la puerta." }
+                ]
+            },
+            {
+                word: "LAMPE",
+                meaning: "Lámpara",
+                examples: [
+                    { de: "Die Lampe gibt helles Licht.", es: "La lámpara da luz brillante." },
+                    { de: "Ich schalte die Lampe ein.", es: "Enciendo la lámpara." }
+                ]
+            },
+            {
+                word: "UFER",
+                meaning: "Orilla",
+                examples: [
+                    { de: "Wir sitzen am Ufer des Sees.", es: "Nos sentamos en la orilla del lago." },
+                    { de: "Das Boot liegt am Ufer.", es: "El bote está en la orilla." }
+                ]
+            },
+            // Comida y bebida
+            {
+                word: "BROT",
+                meaning: "Pan",
+                examples: [
+                    { de: "Das Brot ist frisch.", es: "El pan está fresco." },
+                    { de: "Ich esse Brot zum Frühstück.", es: "Como pan en el desayuno." }
+                ]
+            },
+            {
+                word: "WASSER",
+                meaning: "Agua",
+                examples: [
+                    { de: "Ich trinke viel Wasser.", es: "Bebo mucha agua." },
+                    { de: "Das Wasser ist kalt.", es: "El agua está fría." }
+                ]
+            },
+            {
+                word: "MILCH",
+                meaning: "Leche",
+                examples: [
+                    { de: "Die Milch ist frisch.", es: "La leche está fresca." },
+                    { de: "Ich trinke Milch zum Frühstück.", es: "Bebo leche en el desayuno." }
+                ]
+            },
+            {
+                word: "APFEL",
+                meaning: "Manzana",
+                examples: [
+                    { de: "Der Apfel ist rot und süß.", es: "La manzana es roja y dulce." },
+                    { de: "Ich esse jeden Tag einen Apfel.", es: "Como una manzana cada día." }
+                ]
+            },
+            {
+                word: "KUCHEN",
+                meaning: "Pastel",
+                examples: [
+                    { de: "Der Kuchen schmeckt lecker.", es: "El pastel sabe delicioso." },
+                    { de: "Ich backe einen Kuchen.", es: "Horneo un pastel." }
+                ]
+            },
+            {
+                word: "KAFFE",
+                meaning: "Café",
+                examples: [
+                    { de: "Ich trinke morgens Kaffee.", es: "Tomo café por la mañana." },
+                    { de: "Der Kaffee ist heiß.", es: "El café está caliente." }
+                ]
+            },
+            {
+                word: "SUPPE",
+                meaning: "Sopa",
+                examples: [
+                    { de: "Die Suppe ist warm und lecker.", es: "La sopa está caliente y deliciosa." },
+                    { de: "Ich koche eine Gemüsesuppe.", es: "Cocino una sopa de verduras." }
+                ]
+            },
+            // Objetos y cosas
+            {
+                word: "BUCH",
+                meaning: "Libro",
+                examples: [
+                    { de: "Ich lese ein interessantes Buch.", es: "Leo un libro interesante." },
+                    { de: "Das Buch liegt auf dem Tisch.", es: "El libro está sobre la mesa." }
+                ]
+            },
+            {
+                word: "STIFT",
+                meaning: "Bolígrafo",
+                examples: [
+                    { de: "Ich schreibe mit einem blauen Stift.", es: "Escribo con un bolígrafo azul." },
+                    { de: "Der Stift liegt im Etui.", es: "El bolígrafo está en el estuche." }
+                ]
+            },
+            {
+                word: "TASCHE",
+                meaning: "Bolso",
+                examples: [
+                    { de: "Meine Tasche ist schwer.", es: "Mi bolso es pesado." },
+                    { de: "Die Tasche ist aus Leder.", es: "El bolso es de cuero." }
+                ]
+            },
+            {
+                word: "SCHLOSS",
+                meaning: "Castillo",
+                examples: [
+                    { de: "Das Schloss ist sehr alt.", es: "El castillo es muy antiguo." },
+                    { de: "Wir besuchen ein schönes Schloss.", es: "Visitamos un castillo hermoso." }
+                ]
+            },
+            {
+                word: "BRIEF",
+                meaning: "Carta",
+                examples: [
+                    { de: "Ich schreibe einen Brief.", es: "Escribo una carta." },
+                    { de: "Der Brief kommt morgen an.", es: "La carta llega mañana." }
+                ]
+            },
+            {
+                word: "GELD",
+                meaning: "Dinero",
+                examples: [
+                    { de: "Ich brauche mehr Geld.", es: "Necesito más dinero." },
+                    { de: "Das Geld liegt in der Brieftasche.", es: "El dinero está en la billetera." }
+                ]
+            },
+            {
+                word: "SCHLUESSEL",
+                meaning: "Llave",
+                examples: [
+                    { de: "Wo ist mein Schlüssel?", es: "¿Dónde está mi llave?" },
+                    { de: "Der Schlüssel passt ins Schloss.", es: "La llave encaja en la cerradura." }
+                ]
+            },
+            // Familia y personas
+            {
+                word: "MUTTER",
+                meaning: "Madre",
+                examples: [
+                    { de: "Meine Mutter kocht sehr gut.", es: "Mi madre cocina muy bien." },
+                    { de: "Die Mutter liebt ihre Kinder.", es: "La madre ama a sus hijos." }
+                ]
+            },
+            {
+                word: "VATER",
+                meaning: "Padre",
+                examples: [
+                    { de: "Mein Vater arbeitet viel.", es: "Mi padre trabaja mucho." },
+                    { de: "Der Vater spielt mit den Kindern.", es: "El padre juega con los niños." }
+                ]
+            },
+            {
+                word: "KIND",
+                meaning: "Niño",
+                examples: [
+                    { de: "Das Kind spielt im Garten.", es: "El niño juega en el jardín." },
+                    { de: "Kinder lernen schnell.", es: "Los niños aprenden rápido." }
+                ]
+            },
+            {
+                word: "FREUND",
+                meaning: "Amigo",
+                examples: [
+                    { de: "Er ist mein bester Freund.", es: "Él es mi mejor amigo." },
+                    { de: "Ich treffe meinen Freund heute.", es: "Veo a mi amigo hoy." }
+                ]
+            },
+            {
+                word: "LEHRER",
+                meaning: "Profesor",
+                examples: [
+                    { de: "Der Lehrer erklärt die Aufgabe.", es: "El profesor explica la tarea." },
+                    { de: "Mein Lehrer ist sehr nett.", es: "Mi profesor es muy amable." }
+                ]
+            },
+            // Colores y conceptos
+            {
+                word: "FARBE",
+                meaning: "Color",
+                examples: [
+                    { de: "Welche Farbe magst du?", es: "¿Qué color te gusta?" },
+                    { de: "Die Farbe ist sehr schön.", es: "El color es muy bonito." }
+                ]
+            },
+            {
+                word: "ZEIT",
+                meaning: "Tiempo",
+                examples: [
+                    { de: "Ich habe keine Zeit.", es: "No tengo tiempo." },
+                    { de: "Die Zeit vergeht schnell.", es: "El tiempo pasa rápido." }
+                ]
+            },
+            {
+                word: "ARBEIT",
+                meaning: "Trabajo",
+                examples: [
+                    { de: "Die Arbeit macht mir Spaß.", es: "El trabajo me divierte." },
+                    { de: "Ich gehe zur Arbeit.", es: "Voy al trabajo." }
+                ]
+            },
+            {
+                word: "SCHULE",
+                meaning: "Escuela",
+                examples: [
+                    { de: "Die Kinder gehen zur Schule.", es: "Los niños van a la escuela." },
+                    { de: "Die Schule beginnt um acht Uhr.", es: "La escuela empieza a las ocho." }
+                ]
+            },
+            {
+                word: "STADT",
+                meaning: "Ciudad",
+                examples: [
+                    { de: "Ich wohne in einer großen Stadt.", es: "Vivo en una ciudad grande." },
+                    { de: "Die Stadt ist sehr schön.", es: "La ciudad es muy bonita." }
+                ]
+            },
+            {
+                word: "LAND",
+                meaning: "País",
+                examples: [
+                    { de: "Deutschland ist ein schönes Land.", es: "Alemania es un país hermoso." },
+                    { de: "Welches Land besuchst du?", es: "¿Qué país visitas?" }
+                ]
+            },
+            {
+                word: "WELT",
+                meaning: "Mundo",
+                examples: [
+                    { de: "Die Welt ist groß.", es: "El mundo es grande." },
+                    { de: "Ich reise um die Welt.", es: "Viajo alrededor del mundo." }
+                ]
+            },
+            {
+                word: "LIEBE",
+                meaning: "Amor",
+                examples: [
+                    { de: "Liebe ist wichtig.", es: "El amor es importante." },
+                    { de: "Ich glaube an die Liebe.", es: "Creo en el amor." }
+                ]
+            },
+            {
+                word: "MUSIK",
+                meaning: "Música",
+                examples: [
+                    { de: "Ich höre gerne Musik.", es: "Me gusta escuchar música." },
+                    { de: "Die Musik ist laut.", es: "La música está alta." }
+                ]
+            },
+            {
+                word: "SPORT",
+                meaning: "Deporte",
+                examples: [
+                    { de: "Ich treibe viel Sport.", es: "Hago mucho deporte." },
+                    { de: "Sport ist gesund.", es: "El deporte es saludable." }
+                ]
+            }
+        ];
+
+        const GRID_SIZE = 12;
+        let grid = [];
+        let selectedCells = [];
+        let foundWords = new Set();
+        let currentWords = [];
+        let previousWords = [];
+
+        function initGame() {
+            // Seleccionar 6 palabras aleatorias que no sean las mismas que la partida anterior
+            let availableWords = [...WORDS_DATABASE];
+            
+            // Si hay palabras anteriores, excluirlas de las disponibles
+            if (previousWords.length > 0) {
+                availableWords = availableWords.filter(w => 
+                    !previousWords.some(pw => pw.word === w.word)
+                );
+            }
+            
+            // Si quedan menos de 6 palabras disponibles, resetear y permitir todas
+            if (availableWords.length < 6) {
+                availableWords = [...WORDS_DATABASE];
+                previousWords = [];
+            }
+            
+            // Seleccionar 6 palabras aleatorias
+            currentWords = availableWords.sort(() => Math.random() - 0.5).slice(0, 6);
+            
+            grid = createEmptyGrid();
+            placeWords();
+            fillEmptySpaces();
+            renderBoard();
+            renderWordsList();
+            updateProgress();
+            clearInfoPanel();
+        }
+
+        function createEmptyGrid() {
+            return Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(''));
+        }
+
+        function placeWords() {
+            const directions = [
+                { dx: 0, dy: 1 },   // horizontal
+                { dx: 1, dy: 0 },   // vertical
+                { dx: 1, dy: 1 },   // diagonal down-right
+                { dx: 1, dy: -1 }   // diagonal down-left
+            ];
+
+            currentWords.forEach(wordObj => {
+                let placed = false;
+                let attempts = 0;
+                const maxAttempts = 100;
+
+                while (!placed && attempts < maxAttempts) {
+                    const dir = directions[Math.floor(Math.random() * directions.length)];
+                    const startX = Math.floor(Math.random() * GRID_SIZE);
+                    const startY = Math.floor(Math.random() * GRID_SIZE);
+
+                    if (canPlaceWord(wordObj.word, startX, startY, dir.dx, dir.dy)) {
+                        placeWord(wordObj.word, startX, startY, dir.dx, dir.dy);
+                        placed = true;
+                    }
+                    attempts++;
+                }
+            });
+        }
+
+        function canPlaceWord(word, x, y, dx, dy) {
+            if (x + dx * (word.length - 1) >= GRID_SIZE || x + dx * (word.length - 1) < 0) return false;
+            if (y + dy * (word.length - 1) >= GRID_SIZE || y + dy * (word.length - 1) < 0) return false;
+
+            for (let i = 0; i < word.length; i++) {
+                const newX = x + dx * i;
+                const newY = y + dy * i;
+                if (grid[newY][newX] !== '' && grid[newY][newX] !== word[i]) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function placeWord(word, x, y, dx, dy) {
+            for (let i = 0; i < word.length; i++) {
+                grid[y + dy * i][x + dx * i] = word[i];
+            }
+        }
+
+        function fillEmptySpaces() {
+            const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            for (let i = 0; i < GRID_SIZE; i++) {
+                for (let j = 0; j < GRID_SIZE; j++) {
+                    if (grid[i][j] === '') {
+                        grid[i][j] = letters[Math.floor(Math.random() * letters.length)];
+                    }
+                }
+            }
+        }
+
+        function renderBoard() {
+            const board = document.getElementById('board');
+            board.innerHTML = '';
+            
+            for (let i = 0; i < GRID_SIZE; i++) {
+                for (let j = 0; j < GRID_SIZE; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.textContent = grid[i][j];
+                    cell.dataset.row = i;
+                    cell.dataset.col = j;
+                    cell.addEventListener('click', () => selectCell(i, j, cell));
+                    board.appendChild(cell);
+                }
+            }
+        }
+
+        function selectCell(row, col, element) {
+            const index = selectedCells.findIndex(c => c.row === row && c.col === col);
+            
+            if (index > -1) {
+                selectedCells.splice(index, 1);
+                element.classList.remove('selected');
+            } else {
+                selectedCells.push({ row, col, element });
+                element.classList.add('selected');
+            }
+
+            checkWord();
+        }
+
+        function checkWord() {
+            if (selectedCells.length < 2) return;
+
+            const selectedWord = selectedCells.map(c => grid[c.row][c.col]).join('');
+            const reversedWord = selectedWord.split('').reverse().join('');
+
+            const found = currentWords.find(w => 
+                (w.word === selectedWord || w.word === reversedWord) && !foundWords.has(w.word)
+            );
+
+            if (found) {
+                foundWords.add(found.word);
+                selectedCells.forEach(c => {
+                    c.element.classList.remove('selected');
+                    c.element.classList.add('found');
+                });
+                selectedCells = [];
+                showWordInfo(found);
+                updateProgress();
+                
+                if (foundWords.size === currentWords.length) {
+                    setTimeout(() => showVictory(), 800);
+                }
+            }
+        }
+
+        function showWordInfo(wordObj) {
+            const panel = document.getElementById('infoPanel');
+            
+            const examplesHTML = wordObj.examples.map(ex => `
+                <div class="info-example">
+                    <div class="example-de">"${ex.de}"</div>
+                    <div class="example-es">${ex.es}</div>
+                </div>
+            `).join('');
+
+            panel.innerHTML = `
+                <div class="word-info">
+                    <div class="info-word">${wordObj.word}</div>
+                    <div class="info-meaning">${wordObj.meaning}</div>
+                    <div class="info-examples-title">Ejemplos</div>
+                    ${examplesHTML}
+                </div>
+            `;
+        }
+
+        function clearInfoPanel() {
+            const panel = document.getElementById('infoPanel');
+            panel.innerHTML = `
+                <div class="info-placeholder">🔍</div>
+                <p class="info-text">Encuentra una palabra para ver su significado y ejemplos</p>
+            `;
+        }
+
+        function renderWordsList() {
+            const list = document.getElementById('wordsList');
+            list.innerHTML = currentWords.map(w => `
+                <div class="word-item ${foundWords.has(w.word) ? 'found' : ''}" data-word="${w.word}">
+                    <div class="word-german">${w.word}</div>
+                    <div class="word-spanish">${w.meaning}</div>
+                </div>
+            `).join('');
+        }
+
+        function updateProgress() {
+            const count = document.getElementById('wordCount');
+            const progress = document.getElementById('progressBar');
+            
+            count.textContent = `${foundWords.size}/${currentWords.length}`;
+            progress.style.width = `${(foundWords.size / currentWords.length) * 100}%`;
+            
+            renderWordsList();
+        }
+
+        function clearSelection() {
+            selectedCells.forEach(c => c.element.classList.remove('selected'));
+            selectedCells = [];
+        }
+
+        function newGame() {
+            // Guardar las palabras actuales ANTES de limpiar
+            if (currentWords.length > 0) {
+                previousWords = [...currentWords];
+            }
+            foundWords.clear();
+            selectedCells = [];
+            initGame();
+        }
+
+        function showVictory() {
+            document.getElementById('victoryModal').classList.add('show');
+        }
+
+        function closeVictory() {
+            document.getElementById('victoryModal').classList.remove('show');
+            newGame();
+        }
+
+        // Initialize game on load
+        initGame();
+    </script>
+</body>
+</html>
